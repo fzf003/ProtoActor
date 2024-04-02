@@ -68,13 +68,38 @@ class ProcessActor : IActor
 }
 
 
+public class LoggingRootDecorator : ActorContextDecorator
+{
+
+     private readonly string _loggerName;
+    public LoggingRootDecorator(IContext context,string name) : base(context)
+    {
+        this._loggerName=name;
+    }
+
+    public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
+    {
+        Console.WriteLine($"{_loggerName} : Enter RequestAsync");
+         var res = await base.RequestAsync<T>(target, message, ct);
+        Console.WriteLine($"{_loggerName} : Exit RequestAsync");
+
+        return res;
+    }
+}
+
+
 public class HelloActor : IActor
 {
+ 
     public static Props CreateProps(ILoggerFactory loggerFactory) => Props.FromProducer(() => new HelloActor(loggerFactory));
+
     private readonly ILogger _logger;
     private readonly ILoggerFactory loggerFactory;
 
     PID? processactorPid = default;
+
+          
+
     public HelloActor(ILoggerFactory _loggerFactory)
     {
         this.loggerFactory = _loggerFactory;
@@ -96,7 +121,6 @@ public class HelloActor : IActor
     {
         Console.WriteLine(context.Message + "接受超时!");
 
-
         return Task.CompletedTask;
     }
 
@@ -105,7 +129,7 @@ public class HelloActor : IActor
 
         this._logger.LogInformation($"HelloActor 收到消息:self:{context.Self.Id} Sender:{context.Sender?.Id} Self Address:{context.Self.Address} Sender Address: {context.Sender?.Address}");
 
-        context.RequestAsync<ResponseMessageEvent>(processactorPid, requestMessageEvent)
+       return context.RequestAsync<ResponseMessageEvent>(processactorPid, requestMessageEvent)
                         .ToPipe(success: response =>
                         {
                             this._logger.LogInformation($"返回:HelloActor 收到消息:{requestMessageEvent} 并处理完成:{response}");
@@ -116,7 +140,7 @@ public class HelloActor : IActor
                             return exception;
                         });
 
-        return Task.CompletedTask;
+        //return Task.CompletedTask;
  
         //   this._logger.LogInformation($"返回:HelloActor 收到消息:{requestMessageEvent} 并处理完成:{response}");
     }

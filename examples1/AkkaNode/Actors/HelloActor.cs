@@ -5,14 +5,74 @@ public class HelloActor : ReceiveActor
 {
     private readonly ILoggingAdapter _log = Context.GetLogger();
     private int _helloCounter = 0;
-  
+
     public HelloActor()
     {
- 
-        Receive<string>(message =>
+
+         Receive<string>(message =>
+         {
+             _log.Info("{0} {1} {2}", message, _helloCounter++, this.Self.Path.ToString());
+         });
+
+
+        Receive<StreamRequestMessage>(stream =>
         {
-           _log.Info("{0} {1}", message, _helloCounter++);
+            Task.Run(async () =>
+            {
+                 
+            });
         });
+
+
+
+        ReceiveAny(message =>
+        {
+            _log.Info("Received unknown message {0}", message);
+            //throw new ArithmeticException("ArithmeticException");
+            if (message.ToString().Length % 2 == 0)
+            {
+                //this.Self.Tell(PoisonPill.Instance);
+            }
+
+        });
+    }
+
+    protected override void PreStart()
+    {
+        _log.Info("HelloActor PreStart 启动");
+        base.PreStart();
+    }
+
+    override protected void PreRestart(Exception reason, object message)
+    {
+        _log.Info("HelloActor PreRestart 重启");
+        base.PreRestart(reason, message);
+    }
+
+    override protected void PostRestart(Exception reason)
+    {
+        _log.Info("HelloActor PostRestart 重启完成");
+        base.PostRestart(reason);
+    }
+
+    protected override void PostStop()
+    {
+        _log.Info("HelloActor 停止 PostStop");
+        base.PostStop();
+    }
+
+    protected override SupervisorStrategy SupervisorStrategy()
+    {
+
+        return new OneForOneStrategy(
+           maxNrOfRetries: 2,
+           withinTimeRange: TimeSpan.FromMicroseconds(1),
+           decider: Decider.From(x =>
+           {
+               if (x is ArithmeticException) return Directive.Resume;
+               if (x is NotSupportedException) return Directive.Stop;
+               return Directive.Restart;
+           }));
     }
 }
 

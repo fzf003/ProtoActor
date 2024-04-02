@@ -1,0 +1,9 @@
+akka {  
+    log-config-on-start = on
+    stdout-loglevel = DEBUG
+    loglevel = DEBUG
+    actor
+    {
+         
+    }
+ }

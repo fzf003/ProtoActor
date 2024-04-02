@@ -5,14 +5,14 @@
 var system = BuilderSystem();
 
 await system.Remote().StartAsync();
-
-
-
-var context = new RootContext(system);
+ 
+IRootContext context = new RootContext(system);
 
 var loggerFactory = LoggerFactory.Create(c => c.AddConsole());
+ 
+var Props= HelloActor.CreateProps(loggerFactory).WithContextDecorator(c=>new LoggingRootDecorator(c,"logger1"));
 
-var HelloActorPid = context.SpawnNamed(HelloActor.CreateProps(loggerFactory), "helloactor");
+var HelloActorPid = context.SpawnNamed(Props, "helloactor");
 
 
 Stack<string> _behaviors = new();
@@ -21,9 +21,9 @@ int _count = 1;
 
 for (; ; )
 {
-    //context.Send(HelloActorPid, new PayLoadEvent("Hello,Actor!"));
+    context.Send(HelloActorPid, new PayLoadEvent("Hello,Actor!"));
 
-    context.Send(HelloActorPid, new RequestMessageEvent(null,"Hello,Requesr!!!"));
+    //context.Send(HelloActorPid, new RequestMessageEvent(null,"Hello,Requesr!!!"));
 
     Console.ReadKey();
 

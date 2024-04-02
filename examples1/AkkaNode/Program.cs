@@ -1,10 +1,5 @@
 ﻿
-using Akka.Actor;
-using Akka.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Petabridge.Cmd.Host;
+
 
 var hostBuilder = new HostBuilder()
     .ConfigureAppConfiguration((hostContext, configApp) =>
@@ -13,25 +8,25 @@ var hostBuilder = new HostBuilder()
     })
     .ConfigureServices((hostContext, services) =>
     {
-
-
         services.AddAkka("MyActorSystem", (builder, sp) =>
         {
-                builder.AddPetabridgeCmd(c=>c.Start());
+            builder.AddPetabridgeCmd(c=>c.Start())
+                   .AddHoconFile("akka.hocon",HoconAddMode.Append);
+
             builder.WithActors((system, registry, resolver) =>
                 {
                     var helloActor = system.ActorOf(Props.Create(() => new HelloActor()), "hello-actor");
                     registry.Register<HelloActor>(helloActor);
+                    
                 }).WithActors((system, registry, resolver) =>
-            {
-                var timerActorProps =
-                    resolver.Props<TimerActor>(); 
-                var timerActor = system.ActorOf(timerActorProps, "timer-actor");
-                registry.Register<TimerActor>(timerActor);
-            });
+                {
+                    var timerActorProps =resolver.Props<TimerActor>(); 
+                    var timerActor = system.ActorOf(timerActorProps, "timer-actor");
+                    registry.Register<TimerActor>(timerActor);
+                });
 
         });
 
-    });
+    }).UseConsoleLifetime().Build();
 
-await hostBuilder.Build().RunAsync();
+await  hostBuilder.RunAsync();

@@ -3,21 +3,40 @@ using Akka.Hosting;
 
 public class TimerActor : ReceiveActor, IWithTimers
 {
-    private readonly IActorRef _helloActor;
+     IActorRef _helloActor;
 
     public TimerActor(IRequiredActor<HelloActor> helloActor)
     {
         _helloActor = helloActor.ActorRef;
+
+        Context.Watch(_helloActor);
+
         Receive<string>(message =>
         {
+            //Context.ActorSelection("akka://MyActorSystem/user/hello-actor")?.Tell(message);
             _helloActor.Tell(message);
         });
+
+   
+
+        Receive<Terminated>(Terminated=>{
+
+          Console.WriteLine("停止:"+Terminated.ActorRef.Path);
+
+          _helloActor = Context.ActorOf(Props.Create(() => new HelloActor()), "hello-actor");
+
+           Context.Watch(_helloActor);
+
+        });
+
+    
     }
 
     protected override void PreStart()
     {
-        Timers.StartPeriodicTimer("hello-key", "hello", TimeSpan.FromSeconds(1));
+        
+        Timers.StartPeriodicTimer("hello-key", Guid.NewGuid().ToString("N"), TimeSpan.FromSeconds(1));
     }
 
-    public ITimerScheduler Timers { get; set; } = null!; // gets set by Akka.NET
+    public ITimerScheduler Timers { get; set; } = null!;
 }

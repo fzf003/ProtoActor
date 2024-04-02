@@ -145,10 +145,10 @@ SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM
         {
  
             Affected = await SqlCommand.AddParameter(nameof(userInfo.UserName), userInfo.UserName)
-                                      .AddParameter(nameof(userInfo.Sex), userInfo.Sex)
-                                      .AddParameter(nameof(userInfo.DueAfter), userInfo.DueAfter)
-                                      .AddParameter("State", 0)
-                                      .ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                                       .AddParameter(nameof(userInfo.Sex), userInfo.Sex)
+                                       .AddParameter(nameof(userInfo.DueAfter), userInfo.DueAfter)
+                                       .AddParameter("State", 0)
+                                       .ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
             await SqlCommand.DisposeAsync().ConfigureAwait(false);
         }
