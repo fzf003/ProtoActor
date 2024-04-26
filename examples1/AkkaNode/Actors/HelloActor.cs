@@ -15,12 +15,14 @@ public class HelloActor : ReceiveActor
          });
 
 
-        Receive<StreamRequestMessage>(stream =>
+         Receive<StreamRequestMessage>(stream =>
         {
-            Task.Run(async () =>
-            {
-                 
-            });
+             Console.WriteLine(stream);;
+        });
+
+        Receive<DeadLetter>(async deadleter=>{
+
+            _log.Info("死信消息： {0}",deadleter.Message);
         });
 
 
@@ -40,6 +42,9 @@ public class HelloActor : ReceiveActor
     protected override void PreStart()
     {
         _log.Info("HelloActor PreStart 启动");
+
+        Context.System.EventStream.Subscribe<DeadLetter>(this.Self);
+    
         base.PreStart();
     }
 
@@ -58,6 +63,8 @@ public class HelloActor : ReceiveActor
     protected override void PostStop()
     {
         _log.Info("HelloActor 停止 PostStop");
+         Context.System.EventStream.Unsubscribe<DeadLetter>(this.Self);
+     
         base.PostStop();
     }
 

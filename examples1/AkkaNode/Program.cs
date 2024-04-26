@@ -16,6 +16,7 @@ var hostBuilder = new HostBuilder()
             builder.WithActors((system, registry, resolver) =>
                 {
                     var helloActor = system.ActorOf(Props.Create(() => new HelloActor()), "hello-actor");
+                    system.EventStream.Subscribe(helloActor, typeof(Akka.Event.DeadLetter));
                     registry.Register<HelloActor>(helloActor);
                     
                 }).WithActors((system, registry, resolver) =>

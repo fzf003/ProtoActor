@@ -12,11 +12,11 @@ public record UserInfo(string UserName, string Sex, DateTime DueAfter)
 
 
 
-public record InPutMessage(Guid Id, DateTime? Expires, string Headers, string jsonString)
+public record InPutMessage(Guid Id, DateTime? Expires, string Headers, string Payload)
 {
-    public static InPutMessage Create(Guid Id, DateTime? Expires, string Headers, string jsonString)
+    public static InPutMessage Create(Guid Id, DateTime? Expires, string Headers, string Payload)
     {
-        return new InPutMessage(Id, Expires, Headers, jsonString);
+        return new InPutMessage(Id, Expires, Headers, Payload);
     }
 
     public bool IsExpires()
@@ -25,13 +25,38 @@ public record InPutMessage(Guid Id, DateTime? Expires, string Headers, string js
     }
 }
 
-public record OutPutMessage(Guid Id, DateTime? Expires, IDictionary<string, string> Headers, string jsonString)
+public record OutPutMessage(Guid Id, DateTime? Expires, IDictionary<string, string> Headers, string Payload)
 {
-    public static OutPutMessage Create(Guid Id, DateTime? Expires, IDictionary<string, string> Headers, string jsonString)
+    public static OutPutMessage Create(Guid Id, DateTime? Expires, IDictionary<string, string> Headers, string Payload)
     {
-        return new OutPutMessage(Id, Expires, Headers, jsonString);
+        return new OutPutMessage(Id, Expires, Headers, Payload);
     }
 }
+
+
+
+public interface ISubscribeHandler<T>
+{
+     public Task OnNext(T message);
+
+     public void OnError(Exception ex, T message);
+}
+
+
+public class TestSubscribeHandler : ISubscribeHandler<InPutMessage>
+{
+    public void OnError(Exception ex, InPutMessage message)
+    {
+        
+    }
+
+    public async Task OnNext(InPutMessage message)
+    {
+        Console.WriteLine(message);
+        await Task.CompletedTask;
+    }
+}
+
 
 
 
@@ -70,6 +95,8 @@ public abstract class PubSubService
 
 public class UserPubSubService : PubSubService
 {
+
+
     public override void Subscribe(Func<InPutMessage, Task> func, Action<Exception, InPutMessage> OnError = null, CancellationToken cancellationToken = default)
     {
         Task.Run(async () =>
@@ -79,6 +106,11 @@ public class UserPubSubService : PubSubService
                try
                {
                    await func(item).ConfigureAwait(false);
+                   
+                   if(cancellationToken.IsCancellationRequested)
+                   {
+                       break;
+                   }
                }
                catch (OperationCanceledException)
                {
@@ -99,6 +131,17 @@ public class UserPubSubService : PubSubService
        }, cancellationToken);
     }
 }
+
+public static class PubSubServiceExtensions
+{
+    public static PubSubService Subscribe(this PubSubService pubSubService, ISubscribeHandler<InPutMessage> subscribeHandler, CancellationToken cancellationToken = default)
+    {
+        pubSubService.Subscribe(subscribeHandler.OnNext, subscribeHandler.OnError, cancellationToken);
+        return pubSubService;
+    }
+
+    
+ }
 
 
 /*

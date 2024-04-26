@@ -1,7 +1,4 @@
 ﻿
-
-
-
 var system = BuilderSystem();
 
 await system.Remote().StartAsync();
@@ -19,13 +16,13 @@ Stack<string> _behaviors = new();
 int _count = 1;
 
 
-for (; ; )
+//for (; ; )
 {
     context.Send(HelloActorPid, new PayLoadEvent("Hello,Actor!"));
 
     //context.Send(HelloActorPid, new RequestMessageEvent(null,"Hello,Requesr!!!"));
 
-    Console.ReadKey();
+  //  Console.ReadKey();
 
 }
 

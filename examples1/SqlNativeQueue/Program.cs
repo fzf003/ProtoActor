@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.DependencyInjection;
 using NServiceBus.Transport.SqlServerNative;
 
 SqlConnectionStringBuilder connStrBldr = new SqlConnectionStringBuilder
@@ -106,17 +107,46 @@ UserPubSubService userPubSubService = new UserPubSubService();
 
 var OnError = (Exception ex, InPutMessage message) =>
 {
-    Console.WriteLine(ex.Message);
+    Console.WriteLine("Process:"+ex.Message);
 };
 
 var Process = (InPutMessage message) =>
 {
-    Console.WriteLine(message);
+    Console.WriteLine("Process:"+message);
 
     return Task.CompletedTask;
 };
 
-userPubSubService.Subscribe(Process, OnError);
+var OnError1 = (Exception ex, InPutMessage message) =>
+{
+    Console.WriteLine("OnError1:"+ex.Message);
+};
+
+var Process1 = (InPutMessage message) =>
+{
+    Console.WriteLine("Process1:"+message);
+
+    return Task.CompletedTask;
+};
+
+//var subscribeHandler=new TestSubscribeHandler();  
+
+var provider= GetServiceProvider();
+
+ var handlers= provider.GetServices<ISubscribeHandler<InPutMessage>>();
+
+ foreach(var item in handlers)
+ {
+     Console.WriteLine(item.GetType().Name);
+     userPubSubService.Subscribe(item);
+ }
+
+
+
+
+userPubSubService.Subscribe(Process1,OnError1);
+
+ 
 
 
 
@@ -125,8 +155,12 @@ JsonSerializerOptions jsonSerializer = new JsonSerializerOptions(JsonSerializerD
     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 };
 
+
+ 
+
 for (; ; )
 {
+
     var jsonString = JsonSerializer.Serialize(UserInfo.CreateUser(Guid.NewGuid().ToString("N"), "男", DateTime.Now), jsonSerializer);
     var headers = new Dictionary<string, string>
     {
@@ -136,12 +170,13 @@ for (; ; )
     var dic= JsonSerializer.Deserialize<IDictionary<string, string>>(serialized, jsonSerializer);
     foreach(var item in dic)
     {
-        Console.WriteLine(item.Key+"--"+item.Value);
+       // Console.WriteLine(item.Key+"--"+item.Value);
     }
 
-    var message = InPutMessage.Create(Id: Guid.NewGuid(), Expires: DateTime.Now.AddHours(-1), Headers: serialized, jsonString: jsonString);
-    Console.WriteLine(message.IsExpires());
+    var message = InPutMessage.Create(Id: Guid.NewGuid(), Expires: DateTime.Now.AddHours(-1), Headers: serialized, Payload: jsonString);
+    //Console.WriteLine(message.IsExpires());
     await userPubSubService.SendAsync(message).ConfigureAwait(false);
+    
 
     /* var result = await manager.Consume(
                 size: 5,
@@ -167,4 +202,15 @@ for (; ; )
 
     Console.WriteLine("==========================================================");
     Console.ReadKey();
+}
+
+static IServiceProvider GetServiceProvider()
+{
+    var services=new ServiceCollection();
+
+    services.AddTransient(typeof(ISubscribeHandler<InPutMessage>),typeof(TestSubscribeHandler));
+
+ 
+
+    return services.BuildServiceProvider();
 }

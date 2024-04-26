@@ -2,8 +2,12 @@ akka {
     log-config-on-start = on
     stdout-loglevel = DEBUG
     loglevel = DEBUG
-    actor
-    {
-         
-    }
+    actor {
+      debug {
+        # 打开调试日志记录
+         receive = on
+         autoreceive = on
+         lifecycle = on
+        }
+   }
  }

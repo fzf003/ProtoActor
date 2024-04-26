@@ -35,7 +35,7 @@ public class TimerActor : ReceiveActor, IWithTimers
     protected override void PreStart()
     {
         
-        Timers.StartPeriodicTimer("hello-key", Guid.NewGuid().ToString("N"), TimeSpan.FromSeconds(1));
+        Timers.StartPeriodicTimer("hello-key", new StreamRequestMessage(Guid.NewGuid().ToString("N")) , TimeSpan.FromSeconds(1));
     }
 
     public ITimerScheduler Timers { get; set; } = null!;

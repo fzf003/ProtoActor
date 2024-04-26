@@ -6,7 +6,7 @@ namespace ShardCommon;
 
 public record PayLoadEvent(string Message);
 
-public record RequestMessageEvent(PID request,string Message);
+public record RequestMessageEvent(PID request, string Message);
 
 public record ResponseMessageEvent(string Message);
 
@@ -45,10 +45,10 @@ class ProcessActor : IActor
 
         //throw new Exception("ProcessActor 出现异常....");
 
-        if(requestMessageEvent.request is not null)
+        if (requestMessageEvent.request is not null)
         {
             context.Send(requestMessageEvent.request, new ResponseMessageEvent($"ProcessActor 收到消息并处理完成:{requestMessageEvent.Message}"));
-            
+
             return Task.CompletedTask;
         }
 
@@ -71,16 +71,16 @@ class ProcessActor : IActor
 public class LoggingRootDecorator : ActorContextDecorator
 {
 
-     private readonly string _loggerName;
-    public LoggingRootDecorator(IContext context,string name) : base(context)
+    private readonly string _loggerName;
+    public LoggingRootDecorator(IContext context, string name) : base(context)
     {
-        this._loggerName=name;
+        this._loggerName = name;
     }
 
     public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
     {
         Console.WriteLine($"{_loggerName} : Enter RequestAsync");
-         var res = await base.RequestAsync<T>(target, message, ct);
+        var res = await base.RequestAsync<T>(target, message, ct);
         Console.WriteLine($"{_loggerName} : Exit RequestAsync");
 
         return res;
@@ -90,7 +90,7 @@ public class LoggingRootDecorator : ActorContextDecorator
 
 public class HelloActor : IActor
 {
- 
+
     public static Props CreateProps(ILoggerFactory loggerFactory) => Props.FromProducer(() => new HelloActor(loggerFactory));
 
     private readonly ILogger _logger;
@@ -98,11 +98,12 @@ public class HelloActor : IActor
 
     PID? processactorPid = default;
 
-          
+
 
     public HelloActor(ILoggerFactory _loggerFactory)
     {
         this.loggerFactory = _loggerFactory;
+
         _logger = _loggerFactory.CreateLogger<HelloActor>();
     }
     public Task ReceiveAsync(IContext context)
@@ -124,25 +125,31 @@ public class HelloActor : IActor
         return Task.CompletedTask;
     }
 
-     Task ProcessRequestMessageEventAsync(RequestMessageEvent requestMessageEvent, IContext context)
+    Task ProcessRequestMessageEventAsync(RequestMessageEvent requestMessageEvent, IContext context)
     {
 
         this._logger.LogInformation($"HelloActor 收到消息:self:{context.Self.Id} Sender:{context.Sender?.Id} Self Address:{context.Self.Address} Sender Address: {context.Sender?.Address}");
+        if (context.Sender is not null)
+        {
+            context.Respond(new ResponseMessageEvent($"HelloActor 收到消息:self:{context.Self.Id} Sender:{context.Sender?.Id} Self Address:{context.Self.Address} Sender Address: {context.Sender?.Address}"));
+        }
+        else
+        {
 
-       return context.RequestAsync<ResponseMessageEvent>(processactorPid, requestMessageEvent)
-                        .ToPipe(success: response =>
-                        {
-                            this._logger.LogInformation($"返回:HelloActor 收到消息:{requestMessageEvent} 并处理完成:{response}");
-                            return response;
-                        }, failure: exception =>
-                        {
-                            this._logger.LogError(exception, "ProcessActor 出现异常....");
-                            return exception;
-                        });
+            this._logger.LogInformation($"HelloActor 收到消息:{requestMessageEvent}无回复消息！！");
+        }
+        /* return context.RequestAsync<ResponseMessageEvent>(processactorPid, requestMessageEvent)
+                            .ToPipe(success: response =>
+                            {
+                                this._logger.LogInformation($"返回:HelloActor 收到消息:{requestMessageEvent} 并处理完成:{response}");
+                                return response;
+                            }, failure: exception =>
+                            {
+                                this._logger.LogError(exception, "ProcessActor 出现异常....");
+                                return exception;
+                            });*/
 
-        //return Task.CompletedTask;
- 
-        //   this._logger.LogInformation($"返回:HelloActor 收到消息:{requestMessageEvent} 并处理完成:{response}");
+        return Task.CompletedTask;
     }
 
     Task ProcessPayLoadEventAsync(PayLoadEvent payLoadEvent, IContext context)
