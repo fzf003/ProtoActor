@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -19,7 +20,7 @@ public class Program
     {
         var (username, age) = MakeUserInfo;
 
-          var factory = LoggerFactory.Create(builder => builder.AddConsole());
+          /* var factory = LoggerFactory.Create(builder => builder.AddConsole());
 
             var connectionStringSettings = "Data Source =10.32.3.13; Initial Catalog = HD; Integrated Security = False; User ID = sa; Password = sczs_dev2020; Max Pool Size = 1000; Connect Timeout = 3000";
 
@@ -33,9 +34,25 @@ public class Program
                         {
                             Console.WriteLine(x.Entity+"---"+x.EntityOldValues);
                         });
- 
+
+
+                        
+ */
 
         //CreateObservable().Subscribe(Console.WriteLine);
+
+        Console.WriteLine(DateTime.Now.ToString());
+
+        var time=5000*10;
+        //TimeSpan.FromMilliseconds(1*1000*60);
+
+         using TimerWheel wheel = TimerWheel.CreateTimerWheel(TimeSpan.FromMilliseconds(time), 1);
+         TimerWheelTimer timer = wheel.CreateTimer(TimeSpan.FromMilliseconds(time));
+         Task timerTask = timer.StartTimerAsync();
+         timerTask.ToObservable().Subscribe(x => Console.WriteLine("到期!!!"+ (DateTime.Now.ToString())));
+         //timer.CancelTimer();
+    
+
  
        await Task.Delay(-1);  //Console.ReadKey();
     }
